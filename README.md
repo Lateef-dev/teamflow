@@ -26,11 +26,12 @@ A full stack kanban app where every change syncs live between teammates. Create 
 
 | Layer | Tools |
 | --- | --- |
-| Frontend | Next.js 16 (App Router), React 19, Redux Toolkit (slices, thunks, entity adapters, memoized selectors), Tailwind CSS 4, @hello-pangea/dnd, socket.io-client |
+| Language | TypeScript everywhere, in strict mode with `noUncheckedIndexedAccess` |
+| Frontend | Next.js 16 (App Router), React 19, Redux Toolkit (typed slices, thunks, entity adapters, memoized selectors), Tailwind CSS 4, @hello-pangea/dnd, socket.io-client |
 | Backend | Node.js, Express 5, Socket.io, Mongoose, Zod validation, JWT auth, bcrypt, Helmet, rate limiting |
 | Database | MongoDB |
 | Testing | Vitest + Supertest API tests, socket.io-client realtime tests, Playwright end to end check |
-| Tooling | ESLint, GitHub Actions CI, Docker Compose for local MongoDB |
+| Tooling | ESLint (typescript-eslint), GitHub Actions CI, Docker Compose for local MongoDB |
 
 ## Architecture
 
@@ -47,6 +48,7 @@ A full stack kanban app where every change syncs live between teammates. Create 
 - **Fractional ordering.** Each task stores a float `order`. Moving a card sets its order to the midpoint of its new neighbours, so a move rewrites one document instead of the whole column. When gaps get too small, the server re-spaces the column and broadcasts `tasks:reordered`.
 - **Authorization** is done once per request by `workspaceForMember`, `boardForMember` and `taskForMember` in `server/src/lib/access.js`. Non-members get a 404 so private boards do not leak. Socket rooms use the same checks before a socket can join.
 - **Presence** is tracked in memory per board and per user, so two tabs count as one person.
+- **One source of truth for types.** `shared/types.ts` defines every JSON shape the API returns and the Socket.io event maps. The server's serializers return those types, and both the server and client sockets are typed with them, so a renamed field or event fails the type check on both sides.
 
 ### Realtime events
 
@@ -104,7 +106,7 @@ cd server
 cp .env.example .env        # set MONGO_URI and JWT_SECRET
 npm install
 npm run seed                # optional demo data
-npm run dev                 # http://localhost:4000
+npm run dev                 # http://localhost:4000 (tsx watch)
 
 # 3. Client, in a second terminal
 cd client
@@ -123,33 +125,35 @@ npm test                                          # uses an in-memory MongoDB
 MONGO_URI_TEST=mongodb://127.0.0.1:27017 npm test # or a real MongoDB
 ```
 
-16 tests cover auth, roles and permissions, task CRUD and ordering (including the rebalance path), columns, comments, activity, and the Socket.io layer (auth, presence, broadcasts and the no-echo rule). CI runs the tests, lint and a production build on every push.
+16 tests, written in TypeScript, cover auth, roles and permissions, task CRUD and ordering (including the rebalance path), columns, comments, activity, and the Socket.io layer (auth, presence, broadcasts and the no-echo rule). CI runs the type check, lint and tests for the API, and the lint and production build for the client, on every push.
 
 ## Deployment
 
 - **Database:** MongoDB Atlas free tier. Copy the connection string.
-- **API:** Render, Railway or Fly.io (any host that supports long-lived WebSocket connections; Vercel serverless functions do not). Set `MONGO_URI`, `JWT_SECRET`, `CLIENT_ORIGIN=https://your-app.vercel.app` and `NODE_ENV=production`. Start command `npm start`, root directory `server`.
+- **API:** Render, Railway or Fly.io (any host that supports long-lived WebSocket connections; Vercel serverless functions do not). Set `MONGO_URI`, `JWT_SECRET`, `CLIENT_ORIGIN=https://your-app.vercel.app` and `NODE_ENV=production`. Root directory `server`, build command `npm ci && npm run build`, start command `npm start`.
 - **Client:** Vercel with root directory `client` and `NEXT_PUBLIC_API_URL` set to the API URL.
 
 ## Project structure
 
 ```
+shared/
+  types.ts         API response shapes and Socket.io event maps, used by both apps
 server/
   src/
-    models/        Mongoose schemas: User, Workspace, Board, Task, Comment, Activity
+    models/        Typed Mongoose schemas: User, Workspace, Board, Task, Comment, Activity
     routes/        auth, workspaces, boards (and columns), tasks (and comments)
-    lib/           access checks, realtime emitter, activity log, ordering
+    lib/           access checks, serializers, typed realtime emitter, activity log, ordering
     middleware/    auth, zod validation, error handling
-    socket.js      Socket.io auth, rooms and presence
-    seed.js        demo data
+    socket.ts      Socket.io auth, rooms and presence
+    seed.ts        demo data
   tests/           Vitest + Supertest + socket.io-client
 client/
   src/
     app/           routes: landing, login, register, dashboard, w/[id], b/[id]
     components/    UI kit, board (Column, TaskCard, TaskModal, toolbar)
     store/         Redux Toolkit slices: auth, workspaces, board, ui
-    hooks/         useBoardRealtime, useWorkspaceRealtime, useDraft
-    lib/           api client, socket singleton, ordering
+    hooks/         typed store hooks, useBoardRealtime, useWorkspaceRealtime, useDraft
+    lib/           typed api client, socket singleton, ordering
 ```
 
 ## Possible next steps
@@ -157,4 +161,3 @@ client/
 - Email invites and notifications for assignments and due dates
 - File attachments on tasks (Supabase Storage or Firebase Storage)
 - Redis adapter for Socket.io to run more than one API instance
-- Migrate to TypeScript

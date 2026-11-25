@@ -2,12 +2,15 @@
   "name": "teamflow-server",
   "version": "1.0.0",
   "description": "TeamFlow API: Express, MongoDB and Socket.io",
-  "main": "src/server.js",
+  "main": "dist/server/src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/src/server.js",
+    "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
-    "seed": "node src/seed.js"
+    "seed": "tsx src/seed.ts",
+    "lint": "eslint ."
   },
   "author": "Abdullateef",
   "license": "MIT",
@@ -25,10 +28,21 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^26.6.6",
+    "@types/supertest": "^7.2.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
     "mongodb-memory-server": "^11.4.0",
-    "nodemon": "^3.1.14",
     "socket.io-client": "^4.8.4",
     "supertest": "^7.3.2",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.74.0",
     "vitest": "^5.1.1"
   },
   "type": "module",
