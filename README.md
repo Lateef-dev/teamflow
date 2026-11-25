@@ -125,13 +125,18 @@ npm test                                          # uses an in-memory MongoDB
 MONGO_URI_TEST=mongodb://127.0.0.1:27017 npm test # or a real MongoDB
 ```
 
-16 tests, written in TypeScript, cover auth, roles and permissions, task CRUD and ordering (including the rebalance path), columns, comments, activity, and the Socket.io layer (auth, presence, broadcasts and the no-echo rule). CI runs the type check, lint and tests for the API, and the lint and production build for the client, on every push.
+17 tests, written in TypeScript, cover auth, roles and permissions, the demo seed, task CRUD and ordering (including the rebalance path), columns, comments, activity, and the Socket.io layer (auth, presence, broadcasts and the no-echo rule). CI runs the type check, lint and tests for the API, and the lint and production build for the client, on every push.
 
 ## Deployment
 
-- **Database:** MongoDB Atlas free tier. Copy the connection string.
-- **API:** Render, Railway or Fly.io (any host that supports long-lived WebSocket connections; Vercel serverless functions do not). Set `MONGO_URI`, `JWT_SECRET`, `CLIENT_ORIGIN=https://your-app.vercel.app` and `NODE_ENV=production`. Root directory `server`, build command `npm ci && npm run build`, start command `npm start`.
-- **Client:** Vercel with root directory `client` and `NEXT_PUBLIC_API_URL` set to the API URL.
+MongoDB Atlas for the database, Render for the API (it supports long-lived WebSocket connections, which Vercel serverless functions do not) and Vercel for the client.
+
+1. **MongoDB Atlas.** Create a free cluster, a database user, and allow access from anywhere (`0.0.0.0/0`). Copy the connection string and add the database name: `.../teamflow?retryWrites=true&w=majority`.
+2. **API on Render.** New > Blueprint > pick this repo. `render.yaml` sets everything up; paste the Atlas string as `MONGO_URI` and leave `CLIENT_ORIGIN` as `http://localhost:3000` for now. `SEED_DEMO=true` creates the demo workspace on first boot. Check `https://<your-api>.onrender.com/api/health` returns `{"ok":true}`.
+3. **Client on Vercel.** New Project > import this repo > Root Directory `client` > add `NEXT_PUBLIC_API_URL=https://<your-api>.onrender.com` > Deploy.
+4. **Connect them.** On Render, set `CLIENT_ORIGIN` to the Vercel URL (comma separate several origins) and save. Render redeploys.
+
+The free Render plan sleeps after 15 minutes of inactivity, so the first request after a pause takes about a minute.
 
 ## Project structure
 

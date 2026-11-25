@@ -1,0 +1,24 @@
+# Render Blueprint for the TeamFlow API (https://render.com/docs/blueprint-spec).
+# Render > New > Blueprint > pick this repo. It asks for the two values marked sync: false.
+services:
+  - type: web
+    name: teamflow-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false # Atlas connection string ending in /teamflow
+      - key: CLIENT_ORIGIN
+        sync: false # your Vercel URL, e.g. https://teamflow.vercel.app
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_DEMO
+        value: "true"
