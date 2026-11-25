@@ -15,6 +15,8 @@ export const config = {
   mongoUri: read('MONGO_URI', isProd ? undefined : 'mongodb://127.0.0.1:27017/teamflow'),
   jwtSecret: read('JWT_SECRET', isProd ? undefined : 'dev-only-secret-change-me'),
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '7d') as `${number}d` | `${number}h`,
+  /** Create the demo workspace on boot if it is missing (handy on hosts without a shell). */
+  seedDemo: process.env.SEED_DEMO === 'true',
   clientOrigins: (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000')
     .split(',')
     .map((o) => o.trim())
